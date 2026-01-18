@@ -13,7 +13,11 @@ export async function createSupabaseServerClient() {
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(
+       cookiesToSet: { name: string; value: string; options?: Parameters<ReturnType<typeof cookies>["set"]>[2] }[]
+       ) {
+
+
         // Server Component では set が禁止されるケースがあるため握りつぶす
         // (主にサインイン/サインアウトは Route Handler/Server Action で行う想定)
         try {
