@@ -2,9 +2,8 @@ import Card from "@/components/Card";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 
-export default async function HistoryDetailPage(props: any) {
-  // Nextの型揺れ対策：params が object / Promise のどちらでも吸収
-  const { id } = await Promise.resolve(props?.params);
+export default async function HistoryDetailPage({ params }: any) {
+  const { id } = await Promise.resolve(params);
 
   const supabase = await createSupabaseServerClient();
 
