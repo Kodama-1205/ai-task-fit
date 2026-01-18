@@ -5,7 +5,7 @@ export async function POST(req: Request) {
   try {
     const supabase = await createSupabaseServerClient();
     const { data: userData } = await supabase.auth.getUser();
-    onst user = userData.user;
+    const user = userData.user;
 
     if (!user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
