@@ -2,11 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(request: NextRequest) {
-  // response は cookie 更新反映のために必須
   let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+    request: { headers: request.headers },
   });
 
   const supabase = createServerClient(
@@ -18,35 +15,33 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
-          // request 側へ反映
-          cookiesToSet.forEach(({ name, value, options }) => {
+          // request.cookies.set は環境により (name, value) の2引数のみの型になるため options は渡さない
+          for (const { name, value } of cookiesToSet) {
             try {
-              request.cookies.set(name, value, options);
+              request.cookies.set(name, value);
             } catch {
               // no-op
             }
-          });
+          }
 
-          // response 側へ反映（ブラウザへ返す Set-Cookie）
+          // response を作り直して、response 側に Set-Cookie を積む（ここは options を渡してOK）
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request: { headers: request.headers },
           });
 
-          cookiesToSet.forEach(({ name, value, options }) => {
+          for (const { name, value, options } of cookiesToSet) {
             try {
               response.cookies.set(name, value, options);
             } catch {
               // no-op
             }
-          });
+          }
         },
       },
     }
   );
 
-  // セッション更新（副作用で cookie が setAll 経由で反映される）
+  // セッション更新（cookie 更新が発生した場合は setAll 経由で response に反映される）
   await supabase.auth.getUser();
 
   return response;
