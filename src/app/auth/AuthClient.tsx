@@ -31,7 +31,7 @@ export default function AuthClient({ redirectTo }: { redirectTo: string }) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      router.push(redirectTo);
+      router.push(redirectTo || "/");
       router.refresh();
     } catch (err: any) {
       setMessage(err?.message ?? "認証に失敗しました。");
