@@ -2,11 +2,12 @@ import Card from "@/components/Card";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 
-type Params = { id: string };
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
 
-export default async function HistoryDetailPage(props: { params: Promise<Params> }) {
-  // Next 15.5系: params が Promise 扱いになるケースがあるため await する
-  const { id } = await props.params;
+export default async function HistoryDetailPage({ params }: PageProps) {
+  const { id } = await params;
 
   const supabase = await createSupabaseServerClient();
 
@@ -14,7 +15,6 @@ export default async function HistoryDetailPage(props: { params: Promise<Params>
     data: { user },
   } = await supabase.auth.getUser();
 
-  // middlewareで /history は保護しているが、念のため
   if (!user) {
     redirect(`/auth?redirect=${encodeURIComponent(`/history/${id}`)}`);
   }
@@ -28,12 +28,8 @@ export default async function HistoryDetailPage(props: { params: Promise<Params>
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (error) {
-    throw new Error(error.message);
-  }
-  if (!data) {
-    notFound();
-  }
+  if (error) throw new Error(error.message);
+  if (!data) notFound();
 
   return (
     <div className="grid">
