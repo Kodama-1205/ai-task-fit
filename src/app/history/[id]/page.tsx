@@ -1,24 +1,38 @@
 import Card from "@/components/Card";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-export default async function HistoryDetailPage(props: { params: { id: string } }) {
-  const supabase = createSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/auth");
+type Params = { id: string };
+
+export default async function HistoryDetailPage(props: { params: Promise<Params> }) {
+  // Next 15.5系: params が Promise 扱いになるケースがあるため await する
+  const { id } = await props.params;
+
+  const supabase = await createSupabaseServerClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // middlewareで /history は保護しているが、念のため
+  if (!user) {
+    redirect(`/auth?redirect=${encodeURIComponent(`/history/${id}`)}`);
+  }
 
   const { data, error } = await supabase
     .from("diagnosis_runs")
-    .select("*")
-    .eq("id", props.params.id)
-    .single();
+    .select(
+      "id, created_at, task_title, task_description, selected_tools, total_score, verdict, recommendation, answers, user_id"
+    )
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
 
-  if (error || !data) {
-    return (
-      <Card title="詳細">
-        <div className="small">取得に失敗しました：{error?.message ?? "not found"}</div>
-      </Card>
-    );
+  if (error) {
+    throw new Error(error.message);
+  }
+  if (!data) {
+    notFound();
   }
 
   return (
@@ -30,24 +44,47 @@ export default async function HistoryDetailPage(props: { params: { id: string } 
 
       <Card title="結果">
         <div className="grid">
-          <div className="badge">判定：{data.verdict}</div>
-          <div className="badge">スコア：{data.total_score} / 100</div>
-          {data.task_title ? <div className="small">作業名：{data.task_title}</div> : null}
-          {data.task_description ? <div className="small">概要：{data.task_description}</div> : null}
-          <div className="small">使用ツール：{JSON.stringify(data.selected_tools)}</div>
+          <div className="choiceRow">
+            <span className="badge">判定：{data.verdict}</span>
+            <span className="badge">スコア：{data.total_score} / 100</span>
+          </div>
+
+          <div className="grid grid2">
+            <div>
+              <div className="label">作業名（任意）</div>
+              <div style={{ fontWeight: 900 }}>{data.task_title || "-"}</div>
+            </div>
+            <div>
+              <div className="label">現在使用しているツール</div>
+              <div className="small" style={{ whiteSpace: "pre-wrap" }}>
+                {Array.isArray(data.selected_tools) ? data.selected_tools.join(" / ") : "-"}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="label">作業概要（任意）</div>
+            <div className="small" style={{ whiteSpace: "pre-wrap" }}>
+              {data.task_description || "-"}
+            </div>
+          </div>
+
+          <div className="hr" />
+
+          <div>
+            <div className="label">推奨内容（保存時のJSON）</div>
+            <pre className="small" style={{ whiteSpace: "pre-wrap", margin: 0 }}>
+              {JSON.stringify(data.recommendation, null, 2)}
+            </pre>
+          </div>
+
+          <div>
+            <div className="label">回答（保存時のJSON）</div>
+            <pre className="small" style={{ whiteSpace: "pre-wrap", margin: 0 }}>
+              {JSON.stringify(data.answers, null, 2)}
+            </pre>
+          </div>
         </div>
-      </Card>
-
-      <Card title="推奨内容（保存時のJSON）">
-        <pre className="small" style={{ whiteSpace: "pre-wrap", margin: 0 }}>
-          {JSON.stringify(data.recommendation, null, 2)}
-        </pre>
-      </Card>
-
-      <Card title="回答（保存時のJSON）">
-        <pre className="small" style={{ whiteSpace: "pre-wrap", margin: 0 }}>
-          {JSON.stringify(data.answers, null, 2)}
-        </pre>
       </Card>
     </div>
   );
