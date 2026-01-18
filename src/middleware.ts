@@ -1,58 +1,57 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-// ログイン必須にするのは「履歴」だけ
-const PROTECTED_PREFIXES = ["/history"];
-
-function isProtectedPath(pathname: string) {
-  return PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
-}
-
 export async function middleware(request: NextRequest) {
+  // response は cookie 更新反映のために必須
   let response = NextResponse.next({
-    request: { headers: request.headers },
-  });
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-
-        response = NextResponse.next({
-          request: { headers: request.headers },
-        });
-
-        cookiesToSet.forEach(({ name, value, options }) => {
-          response.cookies.set(name, value, options);
-        });
-      },
+    request: {
+      headers: request.headers,
     },
   });
 
-  // セッション更新
-  const { data } = await supabase.auth.getUser();
-  const user = data.user;
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
+          // request 側へ反映
+          cookiesToSet.forEach(({ name, value, options }) => {
+            try {
+              request.cookies.set(name, value, options);
+            } catch {
+              // no-op
+            }
+          });
 
-  // 未ログインで履歴に来たら /auth へ
-  const { pathname, search } = request.nextUrl;
-  if (!user && isProtectedPath(pathname)) {
-    const nextUrl = new URL("/auth", request.url);
-    const full = pathname + (search || "");
-    nextUrl.searchParams.set("redirect", full);
-    return NextResponse.redirect(nextUrl);
-  }
+          // response 側へ反映（ブラウザへ返す Set-Cookie）
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+
+          cookiesToSet.forEach(({ name, value, options }) => {
+            try {
+              response.cookies.set(name, value, options);
+            } catch {
+              // no-op
+            }
+          });
+        },
+      },
+    }
+  );
+
+  // セッション更新（副作用で cookie が setAll 経由で反映される）
+  await supabase.auth.getUser();
 
   return response;
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
