@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Card from "@/components/Card";
 import { evaluateDiagnosis } from "@/lib/diagnosis/scoring";
+import { TOOL_OPTIONS } from "@/lib/diagnosis/tools";
 import type { AnswerMap, ToolKey } from "@/lib/diagnosis/types";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 
 const DRAFT_KEY = "ai_task_fit_draft_v1";
 const ANSWERS_KEY = "ai_task_fit_answers_v1";
@@ -18,12 +17,6 @@ type Draft = {
 };
 
 export default function ResultPage() {
-  const router = useRouter();
-
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const [saveMsg, setSaveMsg] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
   const { draft, answers } = useMemo(() => {
     if (typeof window === "undefined") return { draft: null as Draft | null, answers: null as AnswerMap | null };
     const dRaw = window.sessionStorage.getItem(DRAFT_KEY);
@@ -41,53 +34,6 @@ export default function ResultPage() {
     return evaluateDiagnosis({ answers, selectedTools: draft.selectedTools });
   }, [draft, answers]);
 
-  async function saveToHistory() {
-    setSaveMsg(null);
-    setBusy(true);
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) {
-        setSaveMsg("履歴保存にはログインが必要です。先にログインしてください。");
-        setBusy(false);
-        return;
-      }
-
-      if (!draft || !answers || !evaluation) {
-        setSaveMsg("保存対象が見つかりません。入力からやり直してください。");
-        setBusy(false);
-        return;
-      }
-
-      const res = await fetch("/api/diagnosis-runs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          taskTitle: draft.taskTitle,
-          taskDescription: draft.taskDescription,
-          selectedTools: draft.selectedTools,
-          otherToolText: draft.otherToolText,
-          answers,
-          totalScore: evaluation.totalScore,
-          verdict: evaluation.verdict,
-          recommendation: evaluation.recommendation,
-        }),
-      });
-
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error ?? "保存に失敗しました。");
-
-      setSaveMsg("履歴に保存しました。");
-    } catch (e: any) {
-      setSaveMsg(e?.message ?? "エラーが発生しました。");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function goHistory() {
-    router.push("/history");
-  }
-
   if (!draft || !answers || !evaluation) {
     return (
       <Card title="結果">
@@ -102,7 +48,7 @@ export default function ResultPage() {
     <div className="grid">
       <div>
         <h1 className="h1">診断結果</h1>
-        <p className="lead">判定と推奨アプローチを提示します（ログイン中なら履歴保存できます）。</p>
+        <p className="lead">判定と推奨アプローチを提示します。</p>
       </div>
 
       <Card title="概要">
@@ -112,7 +58,9 @@ export default function ResultPage() {
           {draft.taskTitle ? <div className="small">作業名：{draft.taskTitle}</div> : null}
           {draft.taskDescription ? <div className="small">概要：{draft.taskDescription}</div> : null}
           <div className="small">
-            使用ツール：{draft.selectedTools.join(", ")}
+            使用ツール：{draft.selectedTools
+              .map((key) => TOOL_OPTIONS.find((t) => t.key === key)?.label ?? key)
+              .join("、")}
             {draft.otherToolText ? `（その他: ${draft.otherToolText}）` : ""}
           </div>
         </div>
@@ -156,17 +104,14 @@ export default function ResultPage() {
         </ul>
       </Card>
 
-      <Card title="履歴保存">
-        <div className="btnRow">
-          <button className="btn btnPrimary" onClick={saveToHistory} disabled={busy} type="button">
-            履歴に保存
-          </button>
-          <button className="btn" onClick={goHistory} disabled={busy} type="button">
-            履歴を見る
-          </button>
-        </div>
-        {saveMsg ? <div className="small" style={{ marginTop: 10 }}>{saveMsg}</div> : null}
-      </Card>
+      <div className="btnRow">
+        <a className="btn btnPrimary" href="/input">
+          もう一度診断する
+        </a>
+        <a className="btn" href="/">
+          トップへ戻る
+        </a>
+      </div>
     </div>
   );
 }

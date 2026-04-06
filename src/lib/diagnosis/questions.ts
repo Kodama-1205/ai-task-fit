@@ -3,9 +3,8 @@ import type { QuestionId } from "./types";
 export type Question = {
   id: QuestionId;
   label: string;
-  // total score用の寄与（YES/NOで増減）
-  yesDelta: number;
-  noDelta: number;
+  yesDelta: number; // YES回答時のスコア増減
+  noDelta: number;  // NO回答時のスコア増減
 };
 
 export const QUESTIONS: Question[] = [
@@ -17,13 +16,13 @@ export const QUESTIONS: Question[] = [
   { id: "q6", label: "複数システム間の転記・コピーが主作業ですか？", yesDelta: 5, noDelta: 0 },
   { id: "q7", label: "失敗しても致命的ではなく、復旧できますか？", yesDelta: 8, noDelta: -12 },
 
-  // リスク系（YESは減点）
+  // リスク系（YES は減点）
   { id: "q8", label: "個人情報・機密情報を大量に扱いますか？", yesDelta: -10, noDelta: 2 },
   { id: "q9", label: "法務/監査/規制の影響を受けますか？", yesDelta: -10, noDelta: 2 },
 
   { id: "q10", label: "正解が一意に決まりますか？", yesDelta: 6, noDelta: -6 },
 
-  // “今のツール”前提（現実性）
+  // ツール環境の現実性（今の環境で実現可能か）
   { id: "q11", label: "今使っているツールだけで、CSV/Excel/JSON等で取り出せますか？", yesDelta: 5, noDelta: -6 },
   { id: "q12", label: "今使っているツールに、自動化機能（API/Power Automate等）がありますか？", yesDelta: 5, noDelta: -6 },
 

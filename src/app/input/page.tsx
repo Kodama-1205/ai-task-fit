@@ -102,7 +102,7 @@ export default function InputPage() {
           </div>
 
           <div className="small">
-            入力は <span className="kbd">sessionStorage</span> に保存されます（ログイン不要）。ログインして結果を保存すると履歴に残せます。
+            入力は <span className="kbd">sessionStorage</span> に一時保存されます。ブラウザを閉じるとリセットされます。
           </div>
         </div>
       </Card>

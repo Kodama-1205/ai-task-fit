@@ -3,7 +3,7 @@ import Card from "@/components/Card";
 export default function TopPage() {
   return (
     <div className="grid">
-      {/* HERO */}
+      {/* ヒーロー */}
       <div style={{ marginTop: 8 }}>
         <div
           className="heroKicker"
@@ -30,21 +30,12 @@ export default function TopPage() {
           <a className="btn btnPrimary" href="/input">
             診断を開始
           </a>
-
-          <a className="btn" href="/history">
-            履歴を見る（ログイン必須）
-          </a>
-
-          <a className="btn" href="/auth">
-            ログイン / 新規登録
-          </a>
         </div>
 
         <div className="choiceRow" style={{ marginTop: 16 }}>
           <span className="badge">YES/NO：14問</span>
           <span className="badge">スコア：0〜100</span>
           <span className="badge">推奨：主＋副</span>
-          <span className="badge">履歴：ログインで保存</span>
         </div>
       </div>
 
@@ -87,19 +78,13 @@ export default function TopPage() {
             <div style={{ fontWeight: 900, marginTop: 10 }}>結論と推奨アプローチ</div>
             <div className="small">主推奨＋副推奨、注意点、理由（効いた回答）まで提示します。</div>
           </div>
-
-          <div>
-            <div className="badge">History</div>
-            <div style={{ fontWeight: 900, marginTop: 10 }}>履歴で比較（ログイン）</div>
-            <div className="small">保存した診断結果を後から見返せます。</div>
-          </div>
         </div>
       </Card>
 
       <Card title="出力イメージ（例）">
         <div className="grid">
           <div className="small">
-            「自動化OK」でも、例外やリスクがある場合は“要注意”に寄せて、現場で事故が起きない提案を返します。
+            「自動化OK」でも、例外やリスクがある場合は"要注意"に寄せて、現場で事故が起きない提案を返します。
           </div>
 
           <pre className="small" style={{ whiteSpace: "pre-wrap", margin: 0 }}>
@@ -118,9 +103,6 @@ export default function TopPage() {
           <div className="btnRow">
             <a className="btn btnPrimary" href="/input">
               今すぐ診断する
-            </a>
-            <a className="btn" href="/history">
-              履歴を見る（ログイン必須）
             </a>
           </div>
         </div>

@@ -10,9 +10,9 @@ const DRAFT_KEY = "ai_task_fit_draft_v1";
 const ANSWERS_KEY = "ai_task_fit_answers_v1";
 
 function initAnswers(): AnswerMap {
-  const map: any = {};
+  const map = {} as AnswerMap;
   for (const q of QUESTIONS) map[q.id] = "no";
-  return map as AnswerMap;
+  return map;
 }
 
 export default function DiagnosisPage() {
@@ -42,7 +42,7 @@ export default function DiagnosisPage() {
   }
 
   function goResult() {
-    // draftが無いとresultで困るので最低限ガード
+    // 入力情報がない場合は入力画面に戻す
     const draft = window.sessionStorage.getItem(DRAFT_KEY);
     if (!draft) {
       router.push("/input");

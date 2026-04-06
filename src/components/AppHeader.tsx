@@ -1,8 +1,6 @@
 import Link from "next/link";
 
-export default function AppHeader(props: { userEmail?: string | null }) {
-  const { userEmail } = props;
-
+export default function AppHeader() {
   return (
     <header className="header">
       <div className="headerInner">
@@ -12,20 +10,10 @@ export default function AppHeader(props: { userEmail?: string | null }) {
 
         <nav className="nav">
           <Link href="/" className="navLink">
-            TOP
+            トップ
           </Link>
-
-          {/* 診断はログイン必須（middlewareでガード） */}
           <Link href="/input" className="navLink">
             診断
-          </Link>
-
-          <Link href="/history" className="navLink">
-            履歴
-          </Link>
-
-          <Link href="/auth" className="navLink">
-            {userEmail ? `ログイン中: ${userEmail}` : "ログイン"}
           </Link>
         </nav>
       </div>
